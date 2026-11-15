@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#f7f8fa" />
+  <title>EntryFlow — Visitor management</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <a class="brand" href="#dashboard" aria-label="EntryFlow home"><span class="brand-mark"><svg viewBox="0 0 32 32"><path d="M7 25V12.5L16 7l9 5.5V25h-6v-7h-6v7z"/><path d="m12 13 3 3 6-6" class="check"/></svg></span><span>entry<span class="brand-light">flow</span></span></a>
+      <div class="workspace-label">WORKSPACE</div>
+      <button class="workspace-switch"><span class="workspace-avatar">H</span><span class="workspace-copy"><b>Haven Cowork</b><small>Workspace</small></span><span class="chevrons">⌃<br>⌄</span></button>
+      <div class="nav-label">MENU</div>
+      <nav class="main-nav" aria-label="Main navigation">
+        <a class="nav-item active" href="#dashboard" data-view="dashboard"><span class="nav-icon">◫</span>Overview</a>
+        <a class="nav-item" href="#visitors" data-view="visitors"><span class="nav-icon">♙</span>Visitors<span class="nav-count" id="nav-count">4</span></a>
+        <a class="nav-item" href="#members" data-view="members"><span class="nav-icon">♧</span>Members</a>
+        <a class="nav-item" href="#reports" data-view="reports"><span class="nav-icon">▥</span>Reports</a>
+      </nav>
+      <div class="nav-label manage-label">MANAGE</div>
+      <nav class="main-nav">
+        <a class="nav-item" href="#locations" data-view="locations"><span class="nav-icon">⌖</span>Locations</a>
+        <a class="nav-item" href="#settings" data-view="settings"><span class="nav-icon">⚙</span>Settings</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="help-card"><div class="help-icon">✳</div><b>Need a hand?</b><p>Our team is here to help you get set up.</p><a href="mailto:hello@entryflow.app">Visit help center <span>↗</span></a></div>
+        <button class="profile"><span class="profile-avatar">AS</span><span class="profile-copy"><b>Ananya Sharma</b><small>Workspace admin</small></span><span class="more">···</span></button>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar"><button class="mobile-menu" id="mobile-menu" aria-label="Open menu">☰</button><div class="breadcrumbs"><span>Workspace</span><i>/</i><b id="crumb">Overview</b></div><div class="top-actions"><button class="icon-button" aria-label="Help">?</button><button class="icon-button notification" aria-label="Notifications">♧<i></i></button><span class="top-divider"></span><button class="top-profile"><span class="profile-avatar small">AS</span><span>Ananya</span><span class="down">⌄</span></button></div></header>
+      <section class="page-content" id="page-content">
+        <div class="page-heading"><div><div class="eyebrow"><span class="live-dot"></span>MONDAY, OCTOBER 20, 2025</div><h1>Good morning, Ananya <span class="wave">✦</span></h1><p class="subtitle">Here’s what’s happening at Haven Cowork today.</p></div><div class="heading-actions"><button class="button button-secondary" id="export-btn"><span>⇩</span> Export</button><button class="button button-primary" id="add-visitor"><span class="plus">＋</span> New visitor</button></div></div>
+        <div class="dashboard-grid">
+          <section class="welcome-card"><div class="welcome-text"><div class="welcome-kicker"><span class="sparkle">✳</span> YOUR SPACE, AT A GLANCE</div><h2>A warm welcome<br>starts right here.</h2><p>Manage every guest with confidence.<br>Your front desk is looking good today.</p><button class="text-link" data-view-link="visitors">View visitor log <span>→</span></button></div><div class="welcome-art"><div class="art-sun"></div><div class="art-plant plant-one"><i></i><i></i><i></i><i></i><b></b></div><div class="art-plant plant-two"><i></i><i></i><i></i><b></b></div><div class="art-counter"><div class="counter-top"></div><div class="counter-front"><div class="counter-logo">H</div></div></div><div class="art-person"><div class="person-head"></div><div class="person-hair"></div><div class="person-body"></div><div class="person-arm"></div></div><div class="art-table"></div><div class="art-cup"></div><div class="art-card">✦</div></div></section>
+          <section class="stats-grid" aria-label="Visitor statistics">
+            <article class="stat-card"><div class="stat-head"><span>Currently inside</span><span class="stat-icon mint">♙</span></div><div class="stat-value" id="stat-inside">12</div><div class="stat-foot"><span class="trend up">↗ 8.2%</span><span>vs. last week</span></div><div class="sparkline mint-line"><svg viewBox="0 0 180 40" preserveAspectRatio="none"><path d="M0 32 C15 30 15 19 30 22 S45 34 60 27 75 21 90 25 105 8 120 15 135 7 150 14 165 5 180 8"/></svg></div></article>
+            <article class="stat-card"><div class="stat-head"><span>Expected today</span><span class="stat-icon lavender">▣</span></div><div class="stat-value" id="stat-expected">8</div><div class="stat-foot"><span class="trend neutral">● On track</span><span>2 arriving soon</span></div><div class="mini-bars"><i style="height:30%"></i><i style="height:52%"></i><i style="height:42%"></i><i style="height:70%"></i><i style="height:48%"></i><i style="height:88%"></i><i style="height:64%"></i><i style="height:100%"></i><i style="height:70%"></i><i style="height:80%"></i><i style="height:58%"></i><i style="height:92%"></i></div></article>
+            <article class="stat-card"><div class="stat-head"><span>Avg. visit length</span><span class="stat-icon peach">◷</span></div><div class="stat-value">1h 24<span class="value-unit">m</span></div><div class="stat-foot"><span class="trend up">↘ 12 min</span><span>vs. last week</span></div><div class="duration-track"><span style="width:68%"></span></div><div class="duration-labels"><span>0h</span><span>2h</span><span>4h</span></div></article>
+          </section>
+        </div>
+        <section class="arrivals-card panel"><div class="section-header"><div><div class="section-title-row"><h2>Today’s arrivals</h2><span class="today-badge">Today <span>⌄</span></span></div><p class="section-subtitle">Keep an eye on who’s coming through.</p></div><button class="view-all" data-view-link="visitors">View all visitors <span>→</span></button></div><div class="table-wrap"><table><thead><tr><th>VISITOR</th><th>HOST / MEMBER</th><th>ARRIVAL</th><th>STATUS</th><th></th></tr></thead><tbody id="visitor-rows"></tbody></table></div><div class="table-footer"><span id="rows-summary">Showing 4 of 8 visitors</span><div class="pagination"><button disabled>‹</button><button class="page-number">1</button><button>2</button><button>›</button></div></div></section>
+        <div class="bottom-grid"><section class="panel activity-panel"><div class="section-header compact"><div><h2>Recent activity</h2><p class="section-subtitle">The latest updates from your space.</p></div><button class="dots-button" aria-label="More options">···</button></div><div class="activity-list" id="activity-list"></div><button class="activity-more">See all activity <span>→</span></button></section><section class="panel locations-panel"><div class="section-header compact"><div><h2>Your locations</h2><p class="section-subtitle">Visitor activity by workspace.</p></div><button class="dots-button" aria-label="More options">···</button></div><div class="location-row"><div class="location-mark">H</div><div class="location-info"><b>Haven Cowork · Downtown</b><span>Active location</span></div><div class="location-visitors"><b id="location-inside">12</b><span>inside</span></div><span class="location-chevron">›</span></div><div class="location-row"><div class="location-mark second">H</div><div class="location-info"><b>Haven Cowork · Riverside</b><span>Active location</span></div><div class="location-visitors"><b>6</b><span>inside</span></div><span class="location-chevron">›</span></div><button class="add-location">＋ Add a location</button></section></div>
+        <footer class="page-footer"><span>© 2025 EntryFlow</span><span>Made for welcoming spaces <span class="footer-heart">♥</span></span><a href="mailto:hello@entryflow.app">Support</a></footer>
+      </section>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="modal-backdrop" aria-hidden="true"><section class="visitor-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button class="modal-close" id="modal-close" aria-label="Close">×</button><div class="modal-icon">♙</div><div class="modal-eyebrow">HAVEN COWORK · DOWNTOWN</div><h2 id="modal-title">Welcome a visitor</h2><p class="modal-intro">Add a guest to today’s visitor log.</p><form id="visitor-form"><label>Visitor name<input name="name" required placeholder="e.g. Jordan Lee" maxlength="80" /></label><div class="form-row"><label>Visiting member<input name="host" required placeholder="e.g. Maya Chen" maxlength="80" /></label><label>Arrival time<input name="time" type="time" required /></label></div><label>Visit purpose<select name="purpose"><option>Meeting</option><option>Tour</option><option>Event</option><option>Delivery</option><option>Other</option></select></label><div class="modal-actions"><button type="button" class="button button-secondary" id="cancel-modal">Cancel</button><button type="submit" class="button button-primary">Add to visitor log <span>→</span></button></div></form></section></div>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="app.js"></script>
+</body>
+</html>

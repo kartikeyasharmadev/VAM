@@ -1,0 +1,9 @@
+import Link from 'next/link'
+import { signUp } from '../actions'
+import { Brand } from '@/components/brand'
+import { GoogleSignIn } from '@/components/google-sign-in'
+
+export default async function Signup({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+  const params = await searchParams
+  return <main className="shell auth-shell"><Brand/><div className="auth-intro"><span className="eyebrow">ARRIVALS, HANDLED.</span><h1>A better first hello starts here.</h1><p>Keep your front desk moving and every guest accounted for.</p></div><section className="auth-card"><h2>Create your account</h2><p className="muted">Use your work email. You’ll create a workspace after confirming your account.</p>{params.check_email&&<div className="notice">Check your inbox for the Supabase confirmation email. After confirming, return here and sign in.</div>}{params.error==='password'&&<div className="error">Use a password with at least 10 characters.</div>}{params.error==='signup'&&<div className="error">Account creation failed. The email may already be registered, or Supabase Auth needs configuration.</div>}<form action={signUp}><div className="field"><label htmlFor="signup-email">Email</label><input id="signup-email" name="email" type="email" autoComplete="email" required placeholder="you@company.com"/></div><div className="field"><label htmlFor="signup-password">Password</label><input id="signup-password" name="password" type="password" autoComplete="new-password" minLength={10} required/><small className="muted">At least 10 characters.</small></div><button className="button full">Create account</button></form><div className="auth-divider"><span>or</span></div><GoogleSignIn/><p className="switch-auth">Already have an account? <Link href="/">Sign in</Link></p></section></main>
+}
