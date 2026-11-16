@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { addWorkspaceMember, cancelWorkspaceInvitation, createBranch, deleteBranch, removeLocationMember, setLocationMemberRole, setWorkspaceRole } from '../actions'
 import { createClient } from '@/lib/supabase/server'
-import { Brand } from '@/components/brand'
+import { BRAND_CONFIG } from '@/components/brand'
 import { AppShell } from '@/components/app-shell'
 
 type Search = Promise<Record<string, string | string[] | undefined>>
@@ -66,7 +66,7 @@ export default async function Settings({ searchParams }: { searchParams: Search 
         })}{!filteredMembers.length && <div className="empty">{search ? 'No users match your search.' : 'No workspace users yet.'}</div>}
       </section>
       {(invitations as WorkspaceInvitation[] | null)?.length ? <section className="panel administration-panel pending-invites"><div className="panel-heading"><div><h2>Pending invitations</h2><p className="muted">These email addresses get access after confirming the invitation.</p></div><span className="count-badge">{(invitations as WorkspaceInvitation[]).length} pending</span></div>{(invitations as WorkspaceInvitation[]).map(invite => <article className="pending-invite-row" key={invite.id}><div><strong>{invite.email}</strong><small>{invite.role} · sent {new Date(invite.created_at).toLocaleDateString()}</small></div><form action={cancelWorkspaceInvitation}><input type="hidden" name="organization_id" value={organization.id}/><input type="hidden" name="return_to" value={section}/><input type="hidden" name="invitation_id" value={invite.id}/><button className="action danger">Revoke</button></form></article>)}</section> : null}
-      <div className="role-help"><strong>Role levels</strong><span><b>Platform Super Admin</b> manages the whole EntryFlow platform. <b>Workspace admin</b> manages every branch in one workspace. <b>Branch admin / Front desk</b> gets access only to assigned branches.</span></div>
+      <div className="role-help"><strong>Role levels</strong><span><b>Platform Super Admin</b> manages the whole {BRAND_CONFIG.name} platform. <b>Workspace admin</b> manages every branch in one workspace. <b>Branch admin / Front desk</b> gets access only to assigned branches.</span></div>
     </>}
   </AppShell>
 }

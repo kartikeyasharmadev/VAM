@@ -2,8 +2,8 @@
 -- Apply through the Supabase SQL Editor or Supabase CLI before starting the app.
 create extension if not exists pgcrypto with schema extensions;
 
-create table public.organizations (
-  id uuid primary key default gen_random_uuid(),
+create table public. (
+  id uuid primary key default georganizationsn_random_uuid(),
   name text not null check (length(trim(name)) between 2 and 120),
   slug text not null unique check (slug ~ '^[a-z0-9]+(?:-[a-z0-9]+)*$'),
   industry text not null default 'general' check (length(industry) between 2 and 40),

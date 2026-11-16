@@ -1,5 +1,6 @@
 'use server'
 
+import { randomUUID } from 'node:crypto'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
@@ -49,29 +50,89 @@ export async function createOrganization(formData: FormData) {
   const name = String(formData.get('name') ?? '').trim()
   const slug = String(formData.get('slug') ?? '').trim().toLowerCase()
   const industry = String(formData.get('industry') ?? 'general')
+  const plan = String(formData.get('plan') ?? '')
+  if (!['starter', 'team', 'business'].includes(plan)) redirect('/?error=plan')
   if (name.length < 2 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) redirect('/?error=workspace')
 
   const supabase = await createClient()
   const { data: claims } = await supabase.auth.getClaims()
   if (!claims?.claims?.sub) redirect('/')
-  const { error } = await supabase.rpc('create_organization', {
+  const { data: organizationId, error } = await supabase.rpc('create_organization_with_plan', {
     p_name: name,
     p_slug: slug,
     p_industry: industry,
+    p_plan_key: plan,
   })
   if (error) redirect('/?error=workspace')
+  if (!organizationId) redirect('/?error=workspace')
   revalidatePath('/')
-  redirect('/')
+  redirect(`/?workspace=${organizationId}`)
+}
+
+export async function createPlatformWorkspace(formData: FormData) {
+  const name = String(formData.get('name') ?? '').trim()
+  const slug = String(formData.get('slug') ?? '').trim().toLowerCase()
+  const industry = String(formData.get('industry') ?? 'general')
+  const plan = String(formData.get('plan') ?? '')
+  if (!['starter', 'team', 'business'].includes(plan)) redirect('/super-admin/workspaces?error=plan')
+  if (name.length < 2 || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)) {
+    redirect('/super-admin/workspaces?error=workspace')
+  }
+
+  const supabase = await createClient()
+  const { data: auth } = await supabase.auth.getClaims()
+  if (!auth?.claims?.sub) redirect('/')
+  const { data: isPlatformAdmin } = await supabase.rpc('is_platform_admin')
+  if (!isPlatformAdmin) redirect('/')
+
+  const { data: organizationId, error } = await supabase.rpc('create_organization_with_plan', {
+    p_name: name,
+    p_slug: slug,
+    p_industry: industry,
+    p_plan_key: plan,
+  })
+  if (error || !organizationId) redirect('/super-admin/workspaces?error=workspace')
+  revalidatePath('/super-admin')
+  revalidatePath('/super-admin/workspaces')
+  redirect(`/?workspace=${organizationId}`)
+}
+
+export async function setWorkspacePlan(formData: FormData) {
+  const organizationId = String(formData.get('organization_id') ?? '')
+  const plan = String(formData.get('plan') ?? '')
+  if (!/^[0-9a-f-]{36}$/i.test(organizationId) || !['starter', 'team', 'business'].includes(plan)) {
+    redirect('/super-admin/billing?error=plan')
+  }
+  const supabase = await requireSignedIn()
+  const { data: isPlatformAdmin } = await supabase.rpc('is_platform_admin')
+  if (!isPlatformAdmin) redirect('/')
+  const { error } = await supabase.rpc('set_workspace_plan', {
+    p_organization_id: organizationId,
+    p_plan_key: plan,
+  })
+  if (error) redirect('/super-admin/billing?error=plan')
+  revalidatePath('/super-admin')
+  revalidatePath('/super-admin/plans')
+  revalidatePath('/super-admin/billing')
+  revalidatePath('/billing')
+  redirect('/super-admin/billing?saved=plan')
 }
 
 export async function createVisit(formData: FormData) {
   const name = String(formData.get('visitor_name') ?? '').trim()
   const email = String(formData.get('email') ?? '').trim() || null
+  const company = String(formData.get('company_name') ?? '').trim() || null
+  const phone = String(formData.get('phone') ?? '').trim() || null
   const host = String(formData.get('host_name') ?? '').trim()
   const locationId = String(formData.get('location_id') ?? '')
   const purpose = String(formData.get('purpose') ?? 'Other')
   const expected = String(formData.get('expected_at_iso') ?? '')
+  const photo = formData.get('visitor_photo')
+  const photoFile = photo instanceof File && photo.size > 0 ? photo : null
   if (!name || !host || !expected || !/^[0-9a-f-]{36}$/i.test(locationId)) redirect('/?error=visit')
+  if ((company && company.length > 120) || (phone && (!/^[+0-9(). -]{3,30}$/.test(phone) || phone.replace(/\D/g, '').length < 3))) redirect('/?error=visit')
+  if (photoFile && (photoFile.size > 5 * 1024 * 1024 || !['image/jpeg', 'image/png', 'image/webp'].includes(photoFile.type))) redirect('/?error=photo')
+  if (photoFile && formData.get('photo_consent') !== 'yes') redirect('/?error=photo_consent')
   const expectedAt = new Date(expected)
   if (Number.isNaN(expectedAt.getTime())) redirect('/?error=visit')
 
@@ -90,7 +151,20 @@ export async function createVisit(formData: FormData) {
     .maybeSingle(), supabase.rpc('is_platform_admin')])
   if (!membership && !platformAdmin) redirect('/?error=membership')
 
-  const { error } = await supabase.rpc('create_visit', {
+  let photoPath: string | null = null
+  if (photoFile) {
+    const bytes = new Uint8Array(await photoFile.arrayBuffer())
+    const png = [137,80,78,71,13,10,26,10].every((byte, index) => bytes[index] === byte)
+    const jpeg = bytes[0] === 0xff && bytes[1] === 0xd8 && bytes.at(-2) === 0xff && bytes.at(-1) === 0xd9
+    const webp = String.fromCharCode(...bytes.slice(0, 4)) === 'RIFF' && String.fromCharCode(...bytes.slice(8, 12)) === 'WEBP'
+    if (!(photoFile.type === 'image/png' && png || photoFile.type === 'image/jpeg' && jpeg || photoFile.type === 'image/webp' && webp)) redirect('/?error=photo')
+    const extension = photoFile.type === 'image/jpeg' ? 'jpg' : photoFile.type === 'image/png' ? 'png' : 'webp'
+    photoPath = `${organizationId}/${locationId}/${userId}/${randomUUID()}.${extension}`
+    const { error: uploadError } = await supabase.storage.from('visitor-photos').upload(photoPath, bytes, { contentType: photoFile.type, upsert: false, cacheControl: '3600' })
+    if (uploadError) redirect('/?error=photo')
+  }
+
+  const rpcArgs = {
     p_organization_id: membership?.organization_id ?? organizationId,
     p_location_id: locationId,
     p_visitor_name: name,
@@ -98,8 +172,14 @@ export async function createVisit(formData: FormData) {
     p_host_name: host,
     p_purpose: purpose,
     p_expected_at: expectedAt.toISOString(),
-  })
-  if (error) redirect(`/?workspace=${organizationId}&error=visit`)
+  }
+  if (company || phone || photoPath) Object.assign(rpcArgs, { p_company_name: company, p_visitor_phone: phone, p_photo_path: photoPath })
+  const { error } = await supabase.rpc('create_visit', rpcArgs)
+  if (error) {
+    if (photoPath) await supabase.storage.from('visitor-photos').remove([photoPath])
+    const missingVisitorMigration = ['PGRST202', 'PGRST204'].includes(error.code ?? '') || error.message.toLowerCase().includes('create_visit')
+    redirect(`/?workspace=${organizationId}&error=${missingVisitorMigration ? 'visitor_setup' : photoPath ? 'photo' : 'visit'}`)
+  }
   revalidatePath('/')
   redirect(`/?workspace=${organizationId}`)
 }
@@ -359,13 +439,13 @@ export async function saveWorkspaceBranding(formData: FormData) {
 export async function startSubscriptionCheckout(formData: FormData) {
   const organizationId = String(formData.get('organization_id') ?? '')
   const plan = String(formData.get('plan') ?? '')
-  if (!/^[0-9a-f-]{36}$/i.test(organizationId) || !['team', 'business'].includes(plan)) redirect('/?error=billing')
+  if (!/^[0-9a-f-]{36}$/i.test(organizationId) || !['starter', 'team', 'business'].includes(plan)) redirect('/?error=billing')
   const supabase = await requireSignedIn()
   const { data: auth } = await supabase.auth.getClaims()
   const userId = auth?.claims?.sub
   const { data: membership } = await supabase.from('organization_members').select('role').eq('organization_id', organizationId).eq('user_id', userId!).maybeSingle()
   if (membership?.role !== 'admin') redirect('/?error=membership')
-  const priceId = plan === 'team' ? process.env.STRIPE_PRICE_TEAM : process.env.STRIPE_PRICE_BUSINESS
+  const priceId = plan === 'starter' ? process.env.STRIPE_PRICE_STARTER : plan === 'team' ? process.env.STRIPE_PRICE_TEAM : process.env.STRIPE_PRICE_BUSINESS
   if (!priceId) redirect(`/billing?workspace=${organizationId}&error=config`)
   const { data: billing } = await supabase.from('organization_billing').select('stripe_customer_id, status').eq('organization_id', organizationId).maybeSingle()
   if (billing?.stripe_customer_id && ['active', 'trialing', 'past_due'].includes(billing.status)) redirect(`/billing?workspace=${organizationId}&error=active`)

@@ -1,6 +1,20 @@
-# EntryFlow
+# Gatewise
 
-EntryFlow is a multi-organization visitor management starter. Coworking is the first example workspace, but the data model is designed around general organizations, locations, visitors, hosts, and visits so it can serve other venues too.
+Gatewise is a multi-organization visitor management app. Coworking is the first example workspace, but the data model is designed around general organizations, locations, visitors, hosts, and visits so it can serve other venues too.
+
+The platform now includes a Light / Dark / System theme switcher and a Platform Super Admin Branding & appearance page. The page and API enforce platform-admin access server-side. Branding reads fall back to Gatewise defaults until the proposed platform settings table and asset bucket are approved and applied; saving is intentionally unavailable before then. Visitor check-in now has optional company/mobile details, consent-gated camera capture or photo upload, and private signed photo previews. Those submissions require the review-only migration [`20261116000500_visitor_photo_details.sql`](supabase/migrations/20261116000500_visitor_photo_details.sql) to be applied first. No migration has been applied to Supabase. Review [`docs/platform-branding-and-visitor-schema-proposal.md`](docs/platform-branding-and-visitor-schema-proposal.md) and [`docs/manual-test-checklist.md`](docs/manual-test-checklist.md) before applying schema changes.
+
+## Automatically deploy migrations to production
+
+The GitHub Actions workflow at [`.github/workflows/deploy-supabase-migrations.yml`](.github/workflows/deploy-supabase-migrations.yml) runs on every push to `main` and can also be started from the Actions tab. It links the configured production Supabase project, prints a dry-run preview, then applies every migration not yet recorded by that project's migration history. It does not run against your computer's local database.
+
+Before enabling it, open **GitHub → VAM repository → Settings → Secrets and variables → Actions** and add:
+
+- Repository secret `SUPABASE_ACCESS_TOKEN`: a Supabase personal access token with the permissions required to link the project.
+- Repository secret `SUPABASE_DB_PASSWORD`: the database password for the production Supabase project.
+- Repository variable `SUPABASE_PROJECT_ID`: the production project ref only. Verify the project name/ref in Supabase before saving it.
+
+Every push to `main` will run `supabase db push --yes --remote` after the dry run. That command applies **all pending migrations**, including older migration files that production has not recorded, not only the latest visitor-photo migration. Check the first workflow run's preview and confirm production already has the expected migration history before relying on automatic deploys. Keep secrets out of the repository and never use a development project's ref or password for this production workflow.
 
 ## Run the Next.js app on Windows
 
@@ -63,9 +77,9 @@ Open [http://localhost:3000](http://localhost:3000). Create an account, confirm 
 
 The existing [`index.html`](index.html) remains the original local UI demo. The Next.js app is the product foundation and runs at `http://localhost:3000`.
 
-## EntryFlow identity and subscriptions
+## Gatewise identity and subscriptions
 
-The product name remains **EntryFlow**, with the tagline **“Arrivals, handled.”** The logo is a custom doorway-and-arrow mark in `src/components/brand.tsx`, with the matching browser icon in `src/app/icon.svg`. The refreshed interface uses a dark aubergine sidebar, lavender surfaces, and purple and pink accents.
+The current product name is **Gatewise**. Its name and primary colors are centralized in `src/components/brand.tsx`. The logo and browser icons use an indigo gateway with a check mark.
 
 The initial plans are Free (1 branch, 3 staff, 100 visits/month), Team (₹999/month, 5 branches, 20 staff, unlimited visits), and Business (₹2,499/month, unlimited branches, staff, and visits). These are the starting INR prices selected for this build. Create matching monthly recurring prices in Stripe; update the labels if you change the Stripe prices later.
 
@@ -79,7 +93,7 @@ To activate Stripe billing:
 6. For deployment, register `https://YOUR-DOMAIN/api/stripe/webhook` in Stripe and subscribe to `customer.subscription.created`, `customer.subscription.updated`, and `customer.subscription.deleted`. Put that endpoint's signing secret in the deployment environment.
 7. Finish testing in Stripe test mode before switching to live keys or charging customers.
 
-Checkout and billing portal sessions are created server-side. The webhook verifies Stripe's signature before updating organization subscription state. Supabase applies Free plan limits of 1 branch, 3 team members, and 100 visits per month; Team limits of 5 branches and 20 team members; and Business has no app limits. Paid limits apply only for active or trialing subscriptions. Stripe's hosted checkout and customer portal keep card handling out of EntryFlow; see Stripe's official [Checkout subscription guide](https://docs.stripe.com/payments/checkout/build-subscriptions) and [customer portal guide](https://docs.stripe.com/customer-management).
+Checkout and billing portal sessions are created server-side. The webhook verifies Stripe's signature before updating organization subscription state. Stripe's hosted checkout and customer portal keep card handling out of Gatewise; see Stripe's official [Checkout subscription guide](https://docs.stripe.com/payments/checkout/build-subscriptions) and [customer portal guide](https://docs.stripe.com/customer-management).
 
 ## Production deployment and reminders
 
@@ -117,3 +131,22 @@ npm run build
 npm run start
 npm run lint
 ```
+
+## PWA setup
+
+The App Router generates `/manifest.webmanifest` from `src/app/manifest.ts`. `public/sw.js` registers only in production (`npm run build` followed by `npm run start`) and is served with `Cache-Control: no-cache`. Development mode intentionally does not register the worker. No PWA-specific environment variables are needed; use the existing `NEXT_PUBLIC_SITE_URL` for auth email links and configure it to the deployed HTTPS origin.
+
+The worker caches only the public offline shell, Gatewise icons, manifest, and versioned `/_next/static/` assets. It does not cache navigations, `/api/*`, `/auth/*`, visitor data, or billing data. Offline check-in queuing and Web Push are not enabled yet: the check-in submit handler and database schema need your approval before those are added.
+
+### Install and test
+
+1. Run `npm run build` and `npm run start`, or deploy to a staging environment served over HTTPS. `localhost` is treated as a secure context by modern browsers.
+2. Visit Gatewise while online, sign in, and use the browser’s install icon or menu. On Android Chrome, choose **Install app**; on desktop Chrome or Edge, choose **Install Gatewise**.
+3. On iPhone or iPad, open the HTTPS site in Safari, tap **Share**, then **Add to Home Screen**. Launch the new home-screen icon to test standalone display.
+4. With the app loaded once, switch the browser’s network to offline. Confirm the connection banner appears and a new navigation shows the offline page. Turn the network back on and press **Retry**.
+5. Deploy a changed service worker, reopen the app online, and confirm the update notice appears. Use **Refresh** when ready; the worker never forces a reload.
+6. On an installed tablet, open the dashboard visitor form and interact with the page. Screen Wake Lock is requested when supported; the app remains usable when the browser denies it.
+
+### Web Push (pending approval)
+
+The current PWA does not request notification permission or store push subscriptions. After approval of the subscription schema and implementation, install the maintained `web-push` package and generate a key pair with `npx web-push generate-vapid-keys`. Store the private key and subject only as server environment variables; expose only the public key as `NEXT_PUBLIC_VAPID_PUBLIC_KEY`. Suggested names are `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (for example `mailto:admin@example.com`), and `NEXT_PUBLIC_VAPID_PUBLIC_KEY`. Never commit real key values. iOS supports Web Push only for a home-screen-installed PWA on iOS/iPadOS 16.4 or later.

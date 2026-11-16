@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   if (!organizationId) return Response.json({ received: true })
   if (!/^[0-9a-f-]{36}$/i.test(organizationId)) return Response.json({ error: 'Invalid organization metadata.' }, { status: 400 })
   const requestedPlan = metadata?.plan_key
-  const planKey = ['team', 'business'].includes(requestedPlan ?? '') ? requestedPlan! : 'free'
+  const planKey = ['starter', 'team', 'business'].includes(requestedPlan ?? '') ? requestedPlan! : 'starter'
   const status = String(subscription.status ?? (event.type.endsWith('.deleted') ? 'canceled' : 'incomplete'))
   const customer = subscription.customer
   const customerId = typeof customer === 'string' ? customer : (customer as { id?: string } | null)?.id
@@ -53,7 +53,7 @@ export async function POST(request: Request) {
   const supabase = createSupabaseClient(supabaseUrl, supabaseSecret, { auth: { persistSession: false, autoRefreshToken: false } })
   const { error } = await supabase.from('organization_billing').upsert({
     organization_id: organizationId,
-    plan_key: status === 'canceled' ? 'free' : planKey,
+    plan_key: planKey,
     status: ['free', 'incomplete', 'trialing', 'active', 'past_due', 'canceled', 'unpaid', 'paused'].includes(status) ? status : 'incomplete',
     stripe_customer_id: customerId ?? null,
     stripe_subscription_id: String(subscription.id ?? ''),
