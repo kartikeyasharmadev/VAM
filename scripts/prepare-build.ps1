@@ -2,6 +2,7 @@ $dirs = @(
   'api',
   'api\cron',
   'api\cron\subscription-reminders',
+  'api\health',
   'api\platform',
   'api\platform\branding',
   'api\stripe',
@@ -25,6 +26,7 @@ $dirs = @(
   'super-admin\billing',
   'super-admin\plans',
   'super-admin\workspaces',
+  'sw-reset',
   'visitors',
   '_global-error.segments\_global-error'
 )

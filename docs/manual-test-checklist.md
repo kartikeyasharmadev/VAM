@@ -16,7 +16,11 @@
 - [ ] Viewing workspace mode:
   - When Super Admin impersonates / views a workspace, verify sticky full-width warning banner:
     *"Viewing {workspace name} as a platform operator. Changes you make are real."*
+  - Verify banner spans 100% of the screen width at the top, outside and above the sidebar/main grid.
+  - Desktop (1920px): banner is a slim amber bar (~44px height), sidebar is strictly 260px wide, and main content area is fully visible beside it.
+  - Mobile (390px): banner wraps cleanly without horizontal overflow; sidebar collapses into mobile drawer.
   - Banner links: click "Platform console" and "Stop viewing" to return to console.
+  - Sidebar: active item shows 3px left primary border and subtle tint; platform console return button and collapsible operations accordion work smoothly.
   - Customer workspace retains its sidebar navigation and routes.
 - [ ] Platform Overview page (`/super-admin`):
   - 4 neutral stat cards display with subtle tinted icon squares, metrics, and helper text (no colored blobs/gradients).

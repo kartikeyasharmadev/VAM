@@ -57,4 +57,19 @@
 - Verified PWA manifest (`manifest.webmanifest`), favicon, page title, and theme-color metadata dynamically derive from `getPlatformBranding()` with Gatewise fallbacks.
 - Verified both `npm run lint` (0 errors) and `npm run build` (all 26 routes generated cleanly with exit code 0).
 
+## Platform operator banner layout and shell restructuring
+
+- Fixed layout bug where the "Viewing workspace as a platform operator" banner rendered as a column inside `.app-frame`'s grid container.
+- Restructured `AppShell` with an outer `.app-shell-root` flex container:
+  - Banner now renders above the app area across 100% of the viewport width with a slim 44px min-height.
+  - `.app-frame` receives exactly two direct children: `<aside className="sidebar">` (fixed 260px desktop, 72px tablet) and `<section className="app-main">` (`minmax(0, 1fr)`).
+  - Set CSS variable `--banner-h` dynamically (`44px` when viewing workspace, `0px` otherwise) with independent scrolling for both the sidebar and main content area.
+- Redesigned banner with token-based amber warning tint (`color-mix(in srgb, var(--warning) 12%, var(--surface))`), exceeding WCAG AA 4.5:1 contrast in both light and dark modes. Replaced solid block with slim amber bar, warning icon, readable text, ghost "Platform console" button, and primary "Stop viewing" action button.
+- Cleaned up sidebar presentation:
+  - Added distinct icons for all navigation items (`building` for Workspaces, `palette` for Branding, `platform` for Overview).
+  - Added left indicator (`border-left: 3px solid var(--primary)`) and subtle tint on active items.
+  - Added "Platform console" return button and collapsible platform operations accordion.
+  - Improved workspace card truncation for long workspace names.
+- Verified zero changes to workflows, routes, impersonation or access logic, permissions, data models, or business logic.
+
 
